@@ -25,9 +25,12 @@ def calculate_movingaverage(number,price_list):
     return average_sum/number
 
 
-def calculate_exponentialaverage(number,price_list):
+def calculate_ema(number, price_list):
+    moving_average = calculate_movingaverage(number, price_list[:-1]) #stripping the relevant EMA's
+    multiplier = (2/(number + 1))
+    ema_to_return = (price_list[-1] - moving_average) * multiplier + moving_average
 
-    return
+    return ema_to_return
 
 
 def main():
