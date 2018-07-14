@@ -26,16 +26,30 @@ def calculate_movingaverage(number,price_list):
 
 
 def calculate_ema(number, price_list):
-    moving_average = calculate_movingaverage(number, price_list[:-1]) #stripping the relevant EMA's
+    moving_average = calculate_movingaverage(number, price_list[:-number]) #stripping the relevant EMA's
     multiplier = (2/(number + 1))
-    ema_to_return = (price_list[-1] - moving_average) * multiplier + moving_average
+    initial_ema = (price_list[-number] - moving_average) * multiplier + moving_average
+    for i in reversed(range(number)):
+        new_ema = (price_list[-i] - initial_ema) * multiplier + initial_ema
+        initial_ema = new_ema
 
-    return ema_to_return
+    return new_ema
+
+
+def calculate_MACD(price_list):
+
+    return calculate_ema(26,price_list) - calculate_ema(13,price_list)
 
 
 def main():
     actions_sheet = load_database()
-
+    relevant_data = actions_sheet[['Especie','Cierre del día']]
+    actions_dictionary = {}
+    for index, row in relevant_data.iterrows():
+        if row[0] not in actions_dictionary:
+            actions_dictionary[row[0]] = [row[1]]
+        else:
+            actions_dictionary[row[0]].append(row[1])
 
 if __name__ == "__main__":
     main()
