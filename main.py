@@ -38,11 +38,7 @@ def calculate_ema(number, price_list):
 
 
 def calculate_MACD(price_list):
-    return calculate_ema(26, price_list) - calculate_ema(13, price_list)
-
-
-def calculate_signalline(price_list):
-    return calculate_ema(9, price_list)
+    return calculate_ema(12, price_list) - calculate_ema(26, price_list)
 
 
 def main():
