@@ -5,6 +5,7 @@ Estructura del archivo de entrada
 Monto Negociado|N° Oper
 
 """
+from colorama import Fore,Style
 import numpy as np
 import pandas as pd
 import statistics
@@ -45,8 +46,8 @@ def calculate_PPO(price_list):
     return (calculate_MACD(price_list) / calculate_ema(26, price_list)) * 100
 
 
-def calculate_RSI(price_list):
-    relevant_numbers = price_list[-14:]  # taking the last 14 days
+def calculate_RSI(variation_list):
+    relevant_numbers = variation_list[-14:]  # taking the last 14 days
     avg_gain = 0
     avg_loss = 0
     for num in relevant_numbers:
@@ -63,7 +64,7 @@ def calculate_RSI(price_list):
 
 def calculate_error_bands(price_list):
     regr = linear_model.LinearRegression()
-    x_values = np.array(list(range(1, len(price_list)+1)))  # taking the last 30 days for linear regression
+    x_values = np.array(list(range(1, len(price_list)+1)))
     x_values = x_values.reshape(-1, 1)
     y_values = np.array(price_list)
     y_values = y_values.reshape(-1,1)
@@ -84,37 +85,144 @@ def initial_load():
 
     return actions_dictionary
 
+def analyze_ma(ma,active_price):
+    result = 0
+    if ma > active_price:
+        result = 1
+    elif ma < active_price:
+        result = -1
 
-def analyze_indicators(price_list):
+    return result
 
+def analyze_macd(macd):
+    result = 0
+    if macd > 0:
+        result = 1
+    elif macd < 0:
+        result = -1
+
+    return result
+
+def analyze_rsi(rsi):
+    result = 0
+    if (rsi >= 70):
+        result = 1
+    elif rsi <=30:
+        result = -1
+    return result
+
+def analyze_ppo(ppo, prev_ppo):
+    result = 0
+    if (ppo > 0) and (prev_ppo < 0):
+        result = -1
+    elif (ppo < 0) and (prev_ppo > 0):
+        result = 1
+
+    return result
+
+def analyze_errorbands(error_bands,active_price):
+    result = 0
+    upper_limit = error_bands[0]
+    lower_limit = error_bands[1]
+    if active_price >= upper_limit:
+        result = 1
+    elif active_price <= lower_limit:
+        result = -1
+
+    return result
+
+def analyze_indicators(price_list,variations_list,action_name):
+    action_score = 0
+    ma5 = calculate_movingaverage(5,price_list)
+    ma10 = calculate_movingaverage(10,price_list)
+    ma20 = calculate_movingaverage(20,price_list)
+    ma40 = calculate_movingaverage(40,price_list)
+    ma100 = calculate_movingaverage(100,price_list)
+    macd = calculate_MACD(price_list)
+    ppo = calculate_PPO(price_list)
+    prev_ppo = calculate_PPO(price_list[:-1])
+    rsi = calculate_RSI(variations_list)
+    error_bands = calculate_error_bands(price_list)
+    active_price = price_list[-1]
+    all_mas = [ma5,ma10,ma20,ma40,ma100]
+    for ma in all_mas:
+        action_score += analyze_ma(ma,active_price)
+
+    action_score += analyze_macd(macd)
+    action_score += analyze_rsi(rsi)
+    action_score += analyze_ppo(ppo,prev_ppo)
+    action_score += analyze_errorbands(error_bands,active_price)
+    output_message = ""
+    cond_colour = Fore.WHITE
+    if action_score > 0:
+        output_message = "VENDER"
+        cond_colour = Fore.RED
+    else:
+        output_message = "COMPRAR"
+        cond_colour = Fore.GREEN
+
+    print(f"{Fore.BLUE}{Style.DIM}Habiendo obtenido los siguientes resultados sobre: {action_name} {Style.RESET_ALL}")
+    print('')
+    print('')
+    print(f"{Fore.LIGHTRED_EX}{Style.DIM}********************************************************************"
+          f"{Style.RESET_ALL}")
+    print(f'{Fore.WHITE}{Style.BRIGHT} MA5: {ma5}   MA10: {ma10}  MA20: {ma20}  MA40: {ma40}  MA100: {ma100}'
+          f'  {Style.RESET_ALL}')
+    print('')
+    print(f'{Fore.WHITE}{Style.BRIGHT} MACD: {macd}  PPO: {ppo}  PPOprev: {prev_ppo}  RSI: {rsi}   {Style.RESET_ALL}')
+    print('')
+    print(f'{Fore.WHITE}{Style.BRIGHT} Limite Superior: {error_bands[0]}  Limite Inferior: {error_bands[1]} {Style.RESET_ALL}')
+    print(f"{Fore.LIGHTRED_EX}{Style.DIM}********************************************************************"
+          f"{Style.RESET_ALL}")
+    print('')
+    print('')
+    print(f'{Fore.WHITE}{Style.BRIGHT}El sistema recomienda para {action_name}:'
+          f' {cond_colour}{Style.BRIGHT}{output_message}{Style.RESET_ALL}')
     return
 
 def main():
+    print(f"{Fore.LIGHTRED_EX}{Style.DIM}*************************************{Style.RESET_ALL}")
+    print(f"{Fore.LIGHTBLUE_EX}{Style.BRIGHT}BIENVENIDO AL ANALIZADOR DE ACCIONES{Style.RESET_ALL}")
+    print(f"{Fore.LIGHTRED_EX}{Style.DIM}*************************************{Style.RESET_ALL}")
+    print(f"{Fore.BLUE}{Style.DIM}Por favor ingrese la Especie que desea analizar{Style.RESET_ALL}")
+    print(f"{Fore.BLUE}{Style.DIM}Usted tiene a disposicion las siguientes especies:{Style.RESET_ALL}")
     actions_dictionary = initial_load()
-    print("*************************************")
-    print("BIENVENIDO AL ANALIZADOR DE ACCIONES")
-    print("*************************************")
-    print("Por favor ingrese la Especie que desea analizar")
-    print("Usted tiene a disposicion las siguientes especies:")
     names_df =pd.DataFrame({'Especie': list(actions_dictionary.keys())})
     with pd.option_context('display.max_rows',None,'display.max_columns',names_df.shape[1],'expand_frame_repr',True):
-        print(names_df)
+        print(f'{Fore.LIGHTYELLOW_EX}{names_df}{Style.RESET_ALL}')
+    keep_running = True
+    while keep_running:
+        valid_name = False
+        while (not valid_name):
+            action_name = input("Accion: ")
+            print('')
+            print('')
+            action_name = action_name.upper()
+            if action_name.upper() not in actions_dictionary.keys():
+                print(f"{Fore.LIGHTRED_EX}{Style.BRIGHT}Nombre de especie incorrecto. Por favor ingrese un nombre váli"
+                      f"do{Style.RESET_ALL}")
+            else:
+                valid_name = True
+        action_data = actions_dictionary[action_name] #getting the requested info
+        variations_list = []
+        prices_list = []
+        for elem in action_data:
+            variations_list.append(elem[1])
+            prices_list.append(elem[0])  #splitting into the relevant lists
 
-    valid_name = False
-    while (not valid_name):
-        action_name = input("Accion: ")
-        action_name = action_name.upper()
-        if action_name.upper() not in actions_dictionary.keys():
-            print("Nombre de especie incorrecto. Por favor ingrese un nombre válido")
-        else:
-            print("Usted ha elegido "+action_name)
-            valid_name = True
-    action_data = actions_dictionary[action_name] #getting the requested info
-    variations_list = []
-    prices_list = []
-    for elem in action_data:
-        variations_list.append(elem[1])
-        prices_list.append(elem[0])  #splitting into the relevant lists
-
+        analyze_indicators(prices_list,variations_list,action_name.upper())
+        print('')
+        print('')
+        print('')
+        print("Desea consultar otra Especie? Escriba Y en ese caso, cualquier otra para salir del sistema")
+        response = input("--->")
+        if response.upper() != 'Y':
+            keep_running = False
+    print('')
+    print('')
+    print('')
+    print(f"{Fore.LIGHTRED_EX}{Style.DIM}*************************************{Style.RESET_ALL}")
+    print (f'{Fore.LIGHTBLUE_EX}{Style.BRIGHT}GRACIAS POR UTILIZAR NUESTRO SISTEMA{Style.RESET_ALL}')
+    print(f"{Fore.LIGHTRED_EX}{Style.DIM}*************************************{Style.RESET_ALL}")
 if __name__ == "__main__":
     main()
