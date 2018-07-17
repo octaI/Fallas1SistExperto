@@ -152,8 +152,6 @@ def analyze_indicators(price_list,variations_list,action_name):
     action_score += analyze_rsi(rsi)
     action_score += analyze_ppo(ppo,prev_ppo)
     action_score += analyze_errorbands(error_bands,active_price)
-    output_message = ""
-    cond_colour = Fore.WHITE
     if action_score > 0:
         output_message = "VENDER"
         cond_colour = Fore.RED
@@ -166,7 +164,8 @@ def analyze_indicators(price_list,variations_list,action_name):
     print('')
     print(f"{Fore.LIGHTRED_EX}{Style.DIM}********************************************************************"
           f"{Style.RESET_ALL}")
-    print(f'{Fore.WHITE}{Style.BRIGHT} MA5: {ma5}   MA10: {ma10}  MA20: {ma20}  MA40: {ma40}  MA100: {ma100}'
+    print(f'{Fore.WHITE}{Style.BRIGHT} Valor: {active_price}  '
+          f'MA5: {ma5}   MA10: {ma10}  MA20: {ma20}  MA40: {ma40}  MA100: {ma100}'
           f'  {Style.RESET_ALL}')
     print('')
     print(f'{Fore.WHITE}{Style.BRIGHT} MACD: {macd}  PPO: {ppo}  PPOprev: {prev_ppo}  RSI: {rsi}   {Style.RESET_ALL}')
