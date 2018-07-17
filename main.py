@@ -7,7 +7,8 @@ Monto Negociado|N° Oper
 """
 
 import pandas as pd
-import xlrd
+import statistics
+import sklearn
 
 
 def load_database():
@@ -40,17 +41,44 @@ def calculate_ema(number, price_list):
 def calculate_MACD(price_list):
     return calculate_ema(12, price_list) - calculate_ema(26, price_list)
 
+def calculate_PPO (price_list):
+    return calculate_MACD(price_list) / calculate_ema(26,price_list) * 100
+
+def calculate_RSI (price_list):
+    relevant_numbers = price_list[-14:] #taking the last 14 days
+    avg_gain = 0
+    avg_loss = 0
+    for num in relevant_numbers:
+        if (num < 0): avg_gain+=num
+
+        else:
+            avg_loss+=(-num)
+    avg_gain = avg_gain/14
+    avg_loss = avg_loss/14
+    relative_strength = avg_gain/avg_loss
+    return (100 - (100/(1+relative_strength)))
+
+def calculate_error_bands(price_list):
+    regr = sklearn.linear_model.LinearRegression()
+    x_values = list(range(1,31)) #taking the last 30 days for linear regression
+    relevant_prices = price_list[-30]
+    y_values = []
+    for elem in relevant_prices:
+        y_values.append(elem(0))
+    regr.fit(x_values,y_values)
+    std_dev = statistics.pstdev(y_values)
+    return regr.predict(30) + 1.96*std_dev, regr.predict(30 - 1.96*std_dev)
 
 def main():
     actions_sheet = load_database()
-    relevant_data = actions_sheet[['Especie', 'Cierre del día']]
+    relevant_data = actions_sheet[['Especie', 'Cierre del día', 'Variación %']]
     actions_dictionary = {}
     for index, row in relevant_data.iterrows():
         if row[0] not in actions_dictionary:
-            actions_dictionary[row[0]] = [row[1]]
+            actions_dictionary[row[0]] = [(row[1],row[2])]
         else:
-            actions_dictionary[row[0]].append(row[1])
-
+            actions_dictionary[row[0]].append((row[1],row[2]))
+    print(actions_dictionary['AGRO'])
 
 if __name__ == "__main__":
     main()
