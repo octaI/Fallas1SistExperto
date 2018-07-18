@@ -208,8 +208,11 @@ def main():
         for elem in action_data:
             variations_list.append(elem[1])
             prices_list.append(elem[0])  #splitting into the relevant lists
-
-        analyze_indicators(prices_list,variations_list,action_name.upper())
+        if (len(prices_list) < 100):
+            print(f"{Fore.LIGHTRED_EX}{Style.BRIGHT}Lo sentimos,la especie seleccionada no cuenta con suficientes datos"
+                  f"{Style.RESET_ALL}")
+        else:
+            analyze_indicators(prices_list,variations_list,action_name.upper())
         print('')
         print('')
         print('')
